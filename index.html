@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neumorphic Weather App</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<style>
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #e0e5ec;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .container {
+        text-align: center;
+        padding: 20px;
+    }
+
+    h1 {
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .neumorphic {
+        background: #e0e5ec;
+        box-shadow: 8px 8px 16px #a3b1c6,
+            -8px -8px 16px #ffffff;
+        border-radius: 20px;
+        padding: 20px;
+        margin: 20px auto;
+        width: 300px;
+    }
+
+    .search-box {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 20px;
+        border-radius: 15px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .search-box input {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        outline: none;
+    }
+
+    .search-box button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #8ca6db;
+        color: white;
+        border-radius: 10px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .search-box button:hover {
+        background-color: #6c8cd5;
+    }
+
+    .weather-box p {
+        margin: 10px 0;
+        font-size: 1.2em;
+        color: #333;
+    }
+
+    .weather-box img {
+        width: 80px;
+        height: 80px;
+    }
+
+    .forecast-wrapper {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-width: 90vw;
+    }
+
+    .forecast-day {
+        width: 140px;
+        padding: 15px;
+        border-radius: 15px;
+        background: #e0e5ec;
+        box-shadow: 5px 5px 10px #a3b1c6,
+            -5px -5px 10px #ffffff;
+        text-align: center;
+        margin: 10px;
+    }
+
+    .forecast-day p {
+        margin: 6px 0;
+        font-size: 0.9em;
+        color: #333;
+    }
+
+    .forecast-day img {
+        width: 50px;
+        height: 50px;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <h1>Weather App</h1>
+        <div class="search-box neumorphic">
+            <input type="text" id="cityInput" placeholder="Enter city name" />
+            <button onclick="getWeather()">Search</button>
+        </div>
+        <div class="weather-box neumorphic" id="weatherBox">
+            <p id="cityName">City</p>
+            <img id="weatherIcon" src="" alt="Weather Icon" />
+            <p id="temperature">0°C</p>
+            <p id="description">Description</p>
+        </div>
+
+        <div id="forecastContainer" class="forecast-wrapper"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+<script>
+    const apiKey = "e0cbb3b55bc3b1e800491809a20bf35a"; // 🔑 Replace with your OpenWeatherMap API key
+
+    async function getWeather() {
+        const city = document.getElementById("cityInput").value;
+        if (!city) return alert("Please enter a city name");
+
+        const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+        const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`;
+
+        try {
+            // Current Weather
+            const currentResponse = await fetch(currentUrl);
+            if (!currentResponse.ok) throw new Error("City not found");
+            const currentData = await currentResponse.json();
+
+            document.getElementById("cityName").textContent = currentData.name;
+            document.getElementById("temperature").textContent = `${Math.round(currentData.main.temp)}°C`;
+            document.getElementById("description").textContent = currentData.weather[0].description;
+
+            const iconCode = currentData.weather[0].icon;
+            document.getElementById("weatherIcon").src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+            // 5-Day Forecast
+            const forecastResponse = await fetch(forecastUrl);
+            const forecastData = await forecastResponse.json();
+
+            const forecastContainer = document.getElementById("forecastContainer");
+            forecastContainer.innerHTML = "";
+
+            const dailyForecasts = forecastData.list.filter(item => item.dt_txt.includes("12:00:00")).slice(0, 5);
+
+            dailyForecasts.forEach(day => {
+                const date = new Date(day.dt_txt);
+                const temp = Math.round(day.main.temp);
+                const desc = day.weather[0].description;
+                const icon = day.weather[0].icon;
+
+                const dayEl = document.createElement("div");
+                dayEl.className = "forecast-day";
+                dayEl.innerHTML = `
+            <p><strong>${date.toDateString().slice(0, 3)}</strong></p>
+            <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}" />
+            <p>${temp}°C</p>
+            <p>${desc}</p>
+          `;
+                forecastContainer.appendChild(dayEl);
+            });
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    // Set default city and auto-load weather on page load
+    window.onload = function () {
+        const defaultCity = "Cadiz City, Negros Occidental";
+        document.getElementById("cityInput").value = defaultCity;
+        getWeather();
+    };
+</script>
+
+</html>
